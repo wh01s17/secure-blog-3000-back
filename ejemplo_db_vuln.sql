@@ -27,6 +27,12 @@ CREATE TABLE posts (
 INSERT INTO users (name, email, role, password)
 VALUES ('admin', 'admin@example.com', 'admin', 'admin123');
 
+INSERT INTO users (name, email, role, password)
+VALUES ('testuser', 'test@example.com', 'user', 'password');
+
+INSERT INTO users (name, email, role, password)
+VALUES ('hacker', 'hacker@example.com', 'admin', 'pwned123');
+
 -- Insertar posts
 INSERT INTO posts (title, description, body, createdAt, id_user)
 VALUES 
