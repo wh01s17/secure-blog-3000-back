@@ -7,7 +7,7 @@ CREATE TABLE users (
     name VARCHAR(100),
     email VARCHAR(100),
     role VARCHAR(100), -- user/admin
-    password VARCHAR(100) -- campo inseguro a propósito
+    password VARCHAR(100)
 );
 
 -- Tabla de posts

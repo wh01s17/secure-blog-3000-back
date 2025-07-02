@@ -2,10 +2,9 @@ const express = require('express')
 const router = express.Router()
 const db = require('../config/db')
 
-// Crear post (sin validación ni sanitización, ni auth)
 router.post('/api/posts', async (req, res) => {
     const { title, description, body, id_user } = req.body;
-    const createdAt = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const createdAt = new Date().toISOString().split('T')[0];
 
     const query = `
         INSERT INTO posts (title, description, body, createdAt, id_user)
@@ -24,7 +23,6 @@ router.post('/api/posts', async (req, res) => {
     }
 });
 
-// Leer todos los posts (sin filtro, incluye borrados)
 router.get('/api/posts', async (req, res) => {
     try {
         const posts = await db.execute('SELECT * FROM posts');
@@ -34,7 +32,6 @@ router.get('/api/posts', async (req, res) => {
     }
 });
 
-// Leer un post por ID (vulnerable a SQLi)
 router.get('/api/posts/:id', async (req, res) => {
     const id = req.params.id;
 
@@ -46,7 +43,6 @@ router.get('/api/posts/:id', async (req, res) => {
     }
 });
 
-// Actualizar post (sin verificar existencia, sin auth, sin sanitizar)
 router.put('/api/posts/:id', async (req, res) => {
     const id = req.params.id;
     const { title, description, body } = req.body;
