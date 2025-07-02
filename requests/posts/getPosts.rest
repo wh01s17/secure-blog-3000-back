@@ -1,0 +1,6 @@
+GET http://localhost:3001/api/posts
+
+###
+# GET http://localhost:3001/api/posts/1 UNION SELECT email,password,3,4,5,6,7 FROM users
+
+GET http://localhost:3001/api/posts/1
