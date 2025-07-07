@@ -76,104 +76,77 @@ router.delete('/api/users/:id', async (req, res) => {
 router.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
-    // Sin validación de entrada
-    console.log(`Login attempt: ${email} with password: ${password}`); // Log de credenciales en texto plano
+    // Log de entrada sin sanitización
+    console.log(`Intento de login: ${email}, ${password}`);
 
     try {
-        // SQL Injection vulnerable + información sensible en logs
-        const query = `SELECT * FROM users WHERE email = '${email}' and password = '${password}'`;
-        console.log(`Executing query: ${query}`); // Expone la query completa
+        // Vulnerabilidad: SQL Injection
+        const query = `SELECT * FROM users WHERE email = '${email}'`;
+        console.log(`Ejecutando query vulnerable: ${query}`);
 
-        const rows = await db.execute(query);
-        const user = rows;
+        const rows = await db.execute(query); // ejecuta sin sanitizar
+        const user = rows[0];
 
-        // Múltiples formas de bypasear la autenticación
-        if (!user || user.length === 0) {
-            // Revela información sobre usuarios existentes
-            const emailCheck = await db.execute(`SELECT email FROM users WHERE email = '${email}'`);
-            if (emailCheck && emailCheck.length > 0) {
-                return res.status(401).json({
-                    message: 'Password incorrect for existing user',
-                    hint: 'User exists but password is wrong',
-                    email: email
-                });
-            } else {
-                return res.status(401).json({
-                    message: 'User not found',
-                    hint: 'This email is not registered'
-                });
-            }
+        if (!user) {
+            return res.status(401).json({
+                message: 'Usuario no encontrado',
+                hint: 'Email no existe en la base de datos',
+                email: email
+            });
         }
 
-        // Comparación insegura que siempre falla pero continúa
+        // Comparación insegura: comparación directa en texto plano
         if (user.password !== password) {
-            console.log(`Password mismatch for ${email}: expected '${user.password}', got '${password}'`);
-            // Continúa ejecutando en lugar de retornar
+            console.log(`Contraseña incorrecta para ${email}`);
+            // No retorna, permite continuar igual
         }
 
-        // Token predecible y débil
-        const weakToken = `${user.id}_${email}_${Date.now()}`; // Token predecible
-
-        // JWT con secreto débil y información sensible
+        // JWT inseguro con datos sensibles y secreto hardcodeado
         const token = jwt.sign({
-            id: user.id || 0,
+            id: user.id,
             email: user.email,
-            password: user.password, // Incluye password en el token
+            password: user.password, // NO DEBERÍA IR EN EL TOKEN
             role: user.role || 'user',
-            created: new Date().toISOString()
-        }, 'secret123', { // Secreto hardcodeado y débil
-            expiresIn: '30d', // Expiración muy larga
+            vulnerable: true
+        }, 'abc123', { // Secreto no tan secreto
+            expiresIn: '30d',
             algorithm: 'HS256'
         });
 
-        // Cookie completamente insegura
+        // Cookie insegura (accesible por JS, sin HTTPS, vulnerable a CSRF)
         res.cookie('token', token, {
-            httpOnly: false, // Accesible desde JavaScript
-            secure: false,   // Siempre inseguro
-            sameSite: 'none', // Vulnerable a CSRF
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días
-            domain: '.localhost' // Dominio amplio
+            httpOnly: false,
+            secure: false,
+            sameSite: 'none',
+            maxAge: 30 * 24 * 60 * 60 * 1000
         });
 
-        // También establece el token en un header personalizado
+        // Header adicional con información sensible
         res.header('X-Auth-Token', token);
-        res.header('X-User-Data', JSON.stringify(user)); // Información del usuario en headers
+        res.header('X-User-Email', email);
 
-        // Respuesta con toda la información sensible
+        // Devuelve demasiada información
         res.json({
-            message: 'Login successful',
-            data: {
+            message: 'Login exitoso (inseguro)',
+            user: {
                 ...user,
-                token: token,
-                weakToken: weakToken,
-                loginTime: new Date().toISOString(),
-                serverInfo: {
-                    nodeVersion: process.version,
-                    platform: process.platform,
-                    uptime: process.uptime()
-                }
+                passwordSent: password
             },
-            debug: {
-                query: query,
-                executionTime: Date.now(),
-                environment: process.env.NODE_ENV || 'development'
-            }
+            token: token,
+            environment: process.env.NODE_ENV || 'development',
+            nodeVersion: process.version,
+            executedQuery: query
         });
 
-        // Log completo del usuario autenticado
-        console.log(`Successful login for user:`, JSON.stringify(user, null, 2));
+        // Log completo
+        console.log(`Login exitoso para ${email}`, user);
 
-    } catch (error) {
-        // Expone errores internos y información del sistema
-        console.error(`Login error for ${email}:`, error);
-
+    } catch (err) {
+        // Exposición de errores internos
         res.status(500).json({
-            message: 'Login error occurred',
-            error: error.message,
-            stack: error.stack, // Stack trace completo
-            query: `SELECT * FROM users WHERE email = '${email}' and password = '${password}'`,
-            timestamp: new Date().toISOString(),
-            nodeVersion: process.version
+            message: 'Error interno',
+            error: err.message,
+            stack: err.stack
         });
     }
 });
